@@ -1,7 +1,6 @@
 // database/cache/mmkvStorage.js
 import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
-import { encrypt, decrypt } from '../../utils/encryption';
 
 // Track all keys for clearAll functionality
 const KEY_TRACKER = '@racetracker:keys';
@@ -67,13 +66,8 @@ class SecureStorage {
       // Store the actual value
       const valueToStore = 
         typeof value === 'string' ? value : JSON.stringify(value);
-      
-      // Encrypt sensitive data
-      const storageValue = this.sensitiveKeys.has(key)
-        ? encrypt(valueToStore)
-        : valueToStore;
 
-      await SecureStore.setItemAsync(key, storageValue);
+      await SecureStore.setItemAsync(key, valueToStore);
 
       // Update key tracker if new key
       if (!keys.includes(key)) {
@@ -119,16 +113,11 @@ class SecureStorage {
       const rawValue = await SecureStore.getItemAsync(key);
       if (!rawValue) return null;
       
-      // Decrypt if needed
-      const value = this.sensitiveKeys.has(key)
-        ? decrypt(rawValue)
-        : rawValue;
-      
       // Try to parse as JSON
       try {
-        return JSON.parse(value);
+        return JSON.parse(rawValue);
       } catch {
-        return value;
+        return rawValue;
       }
     } catch (error) {
       console.error('SecureStore get error:', error);
